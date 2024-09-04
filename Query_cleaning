@@ -1,0 +1,157 @@
+--CREATING THE TABLE
+
+create table layoffs(
+	company	varchar,
+	location	varchar,
+	industry	varchar,
+	total_laid_off	varchar ,
+	percentage_laid_off	varchar,
+	date	date, 
+	stage	varchar,
+	country	varchar,
+	funds_raised_millions varchar
+)
+
+--Extra table is create to protect the raw data in the original table.
+CREATE TABLE layoff
+(LIKE layoffs INCLUDING ALL);
+
+insert into layoff
+select * 
+from layoffs
+
+select * from layoff
+
+-- Removing the duplicate(here we dont have any unique identity number in this table.
+
+select company, industry, total_laid_off, 'date','location',percentage_laid_off, stage,country, funds_raised_millions, 
+row_number() over(partition by company, industry, total_laid_off, 'date') as row_num
+from layoff
+
+with duplicate_cte as
+(select company, industry, total_laid_off, "date","location",percentage_laid_off, stage,country, funds_raised_millions, 
+row_number() over(partition by company, industry, total_laid_off, "date","location",percentage_laid_off, stage,country, funds_raised_millions) as row_num
+from layoff)
+select *
+from duplicate_cte 
+where row_num>1;
+
+select * from layoff
+where company = 'Casper'
+
+select * from layoff
+where company = 'Wildlife Studios'
+
+
+--creating new table to remove the duplicates from the table. 
+
+CREATE TABLE layoff2 
+(
+    company character varying ,
+    "locstion" character varying,
+    industry character varying ,
+    total_laid_off character varying ,
+    percentage_laid_off character varying ,
+    "date" date,
+    stage character varying ,
+    country character varying ,
+    funds_raised_millions character varying ,
+	row_num int
+)
+
+insert into layoff2
+select *,
+row_number() over(partition by company, industry, total_laid_off, 'date','location',percentage_laid_off, stage,country, funds_raised_millions) as row_num
+from layoff
+
+select *
+from layoff2
+where row_num>1
+
+--Delete Ducplicates
+
+delete 
+from layoff2
+where row_num>1
+
+----------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------
+                                      Standardization of Data
+-- STANDARDIZING DATA
+
+--How can you ensure that all leading and trailing spaces are removed from the company column in the 
+--layoff2 table, and then list all unique company names in alphabetical order?
+	
+SELECT company, trim(company)
+from layoff2
+
+update layoff2
+set company = trim(company)
+
+SELECT distinct company
+from layoff2
+order by 1
+
+-- How can you retrieve a list of all unique industries in the layoff2 table 
+-- and then find all rows where the industry name starts with "Crypto"?
+
+
+
+select distinct industry
+from layoff2
+order by 1
+
+select *
+from layoff2
+where industry like 'Crypto%'
+
+--updating table again if industry mistakenly deleted. 
+
+UPDATE layoff2
+SET industry = layoff.industry
+FROM layoff
+WHERE layoff.company = layoff2.company;
+
+--updating the table to combone the different industries related to crypto. 
+
+update layoff2
+set industry = 'Crypto'
+where industry = 'Crytpo%'
+
+
+Retrieve All Unique Countries
+Question: How can you obtain a list of all distinct country names from the layoff2 table and sort them in alphabetical order?
+
+SELECT DISTINCT country
+FROM layoff2
+ORDER BY 1;
+
+
+2. Find Records for a Specific Country
+Question: How can you retrieve all columns for records in the layoff2 table where the country name starts with "United States", 
+and sort the results in alphabetical order by country?
+
+SELECT *
+FROM layoff2
+WHERE country LIKE 'United States%'
+ORDER BY 1;
+
+
+3. Retrieve Unique Countries with Trailing Underscores Removed
+Question: How can you get a list of distinct country names from the layoff2 table, 
+with any trailing underscores removed, and sort the results in alphabetical order?
+
+SELECT DISTINCT country, TRIM(TRAILING '_' FROM country) AS trimmed_country
+FROM layoff2
+ORDER BY 1;
+
+
+4. Update Country Names by Removing Trailing Underscores
+Question: How can you update the country column in the layoff2 table to remove trailing underscores from country names 
+where the country starts with "united States"?
+
+UPDATE layoff2
+SET country = TRIM(TRAILING '_' FROM country)
+WHERE country LIKE 'united States%';
+
+
